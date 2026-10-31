@@ -256,7 +256,7 @@ class NexusUi(
   }
 
   private fun tile(app: CatalogApp): View {
-    val available = launcher.resolve(app.packageName) != null
+    val available = playable(app)
     val selected = app.id == selectedId
     val holder = FrameLayout(context).apply {
       addView(artwork(app), FrameLayout.LayoutParams(-1, -1))
@@ -282,7 +282,7 @@ class NexusUi(
       )
       if (!available) {
         addView(
-          label(if (app.packageName.isEmpty()) "Guide only" else "Not on this headset", 15f, MUTED_LIGHT, shadow = true)
+          label(missingCaption(app), 15f, MUTED_LIGHT, shadow = true)
             .apply { gravity = Gravity.CENTER },
           matchWrap(),
         )
@@ -304,7 +304,7 @@ class NexusUi(
   /** The app's own logo, or the guide's emoji on a colour plate when there is no installed app. */
   private fun artwork(app: CatalogApp): View {
     val drawable =
-      if (app.packageName.isEmpty()) null
+      if (app.packageName.isEmpty() || app.isVideo) null
       else icons.getOrPut(app.packageName) { launcher.icon(app.packageName) }
     val view: View =
       if (drawable != null) {
@@ -563,33 +563,59 @@ class NexusUi(
     }
   }
 
+  /** An app is playable when installed; a video needs its file on this headset and a player for it. */
+  private fun playable(app: CatalogApp): Boolean =
+    if (app.isVideo) app.videoUri.isNotEmpty() && launcher.resolveVideoPlayer(app.packageName) != null
+    else launcher.resolve(app.packageName) != null
+
+  private fun missingCaption(app: CatalogApp): String =
+    when {
+      app.isVideo && app.videoUri.isEmpty() -> "Video not on this headset"
+      app.isVideo -> "No video player"
+      app.packageName.isEmpty() -> "Guide only"
+      else -> "Not on this headset"
+    }
+
   private fun renderReadiness(app: CatalogApp) {
-    val target = launcher.resolve(app.packageName)
+    val ready = playable(app)
     val left = app.setup.indices.count { !ticks.isDone(app.id, "setup", it) }
-    launchButton.isEnabled = target != null
-    launchButton.alpha = if (target != null) 1f else 0.45f
+    launchButton.isEnabled = ready
+    launchButton.alpha = if (ready) 1f else 0.45f
     launchButton.text =
       when {
-        target != null -> "Launch"
+        ready -> if (app.isVideo) "Play" else "Launch"
+        app.isVideo -> "Can't play here"
         app.packageName.isEmpty() -> "No headset app"
         else -> "Not installed"
       }
     readiness.text =
       when {
+        app.isVideo && app.videoUri.isEmpty() -> "Video missing on this headset"
+        app.isVideo && !ready -> "Video player missing on this headset"
         app.packageName.isEmpty() -> "Runs outside the headset"
-        target == null -> "Install it from Quest Fleet"
+        !ready -> "Install it from Quest Fleet"
         app.setup.isEmpty() -> "Ready"
         left > 0 -> "$left setup step${if (left == 1) "" else "s"} left"
         else -> "Set up and ready"
       }
-    readiness.setTextColor(if (target != null && left == 0) READY else ALERT_TEXT)
+    readiness.setTextColor(if (ready && left == 0) READY else ALERT_TEXT)
   }
 
   private fun launchSelected() {
     val app = apps.firstOrNull { it.id == selectedId } ?: return
-    val target = launcher.resolve(app.packageName)
-    if (target != null) ReturnSession.arm(context, target)
-    if (target == null || !launcher.launch(target)) {
+    val opened =
+      if (app.isVideo) {
+        val player = launcher.resolveVideoPlayer(app.packageName)
+        if (player != null && app.videoUri.isNotEmpty()) {
+          ReturnSession.arm(context, player)
+          launcher.playVideo(player.packageName, app.videoUri, app.videoMime)
+        } else false
+      } else {
+        val target = launcher.resolve(app.packageName)
+        if (target != null) ReturnSession.arm(context, target)
+        target != null && launcher.launch(target)
+      }
+    if (!opened) {
       ReturnSession.clear(context)
       readiness.text = "Could not open ${app.title}"
       readiness.setTextColor(WARN)

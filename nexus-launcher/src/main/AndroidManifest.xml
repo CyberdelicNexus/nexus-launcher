@@ -40,6 +40,13 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="com.oculus.intent.category.VR" />
         </intent>
+        <!-- Players that can open a video the launcher hands them. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="content" android:mimeType="video/*" />
+        </intent>
+        <package android:name="com.oculus.horizonmediaplayer" />
+        <package android:name="com.oculus.hzosgallery" />
     </queries>
 
     <application

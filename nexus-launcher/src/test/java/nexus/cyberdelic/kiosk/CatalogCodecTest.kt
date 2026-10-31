@@ -22,6 +22,28 @@ class CatalogCodecTest {
     assertEquals(Trouble("No audio", "Check volume"), catalog.apps[0].troubleshooting.single())
   }
 
+  @Test fun `reads a video entry and its file address`() {
+    val catalog = CatalogCodec.parse(
+      """{"schema":"nexus.catalog.v1","apps":[{"id":"o","title":"Oblatio","package":"com.oculus.horizonmediaplayer",
+      "video":"Oblatio.mp4","videoUri":"content://media/external/video/media/1000000031","videoMime":"video/mp4"},
+      {"id":"m","title":"Missing","package":"com.oculus.horizonmediaplayer","video":"Gone.mp4","videoUri":""}]}""",
+    )
+    assertEquals(true, catalog.apps[0].isVideo)
+    assertEquals("content://media/external/video/media/1000000031", catalog.apps[0].videoUri)
+    assertEquals("", catalog.apps[1].videoUri)
+    assertEquals(false, CatalogCodec.parse(valid).apps[0].isVideo)
+  }
+
+  @Test fun `rejects a video address outside the media library`() {
+    listOf("content://other.app/secret", "file:///sdcard/a.mp4", "content://media/external/video/media/../x").forEach { uri ->
+      assertThrows(IllegalArgumentException::class.java) {
+        CatalogCodec.parse(
+          """{"schema":"nexus.catalog.v1","apps":[{"id":"a","title":"A","video":"a.mp4","videoUri":"$uri"}]}""",
+        )
+      }
+    }
+  }
+
   @Test fun `rejects a wrong schema`() {
     assertThrows(IllegalArgumentException::class.java) {
       CatalogCodec.parse("""{"schema":"other","apps":[]}""")

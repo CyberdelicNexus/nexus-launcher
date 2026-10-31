@@ -26,7 +26,13 @@ data class CatalogApp(
   val facilitate: List<String> = emptyList(),
   val reset: List<String> = emptyList(),
   val troubleshooting: List<Trouble> = emptyList(),
-)
+  val video: String = "",
+  val videoUri: String = "",
+  val videoMime: String = "",
+) {
+  /** A video entry opens a file in `packageName`, which is then a player app. */
+  val isVideo: Boolean get() = video.isNotEmpty()
+}
 
 data class Trouble(val problem: String, val fix: String)
 
@@ -38,6 +44,9 @@ object CatalogCodec {
   const val MAX_BYTES = 1024 * 1024
   private const val MAX_APPS = 200
   private val packagePattern = Regex("""^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)+$""")
+  // Only the headset's own media library, never an arbitrary address.
+  private val videoUriPattern = Regex("""^content://media/external/video/media/\d+$""")
+  private val mimePattern = Regex("""^video/[A-Za-z0-9.+*-]+$""")
 
   fun parse(text: String): Catalog {
     val root = JSONObject(text)
@@ -57,6 +66,10 @@ object CatalogCodec {
     require(packageName.isEmpty() || packagePattern.matches(packageName)) {
       "Invalid package name for $title."
     }
+    val videoUri = item.optString("videoUri").trim()
+    require(videoUri.isEmpty() || videoUriPattern.matches(videoUri)) { "Invalid video address for $title." }
+    val videoMime = item.optString("videoMime").trim()
+    require(videoMime.isEmpty() || mimePattern.matches(videoMime)) { "Invalid video type for $title." }
     return CatalogApp(
       id = id,
       title = title,
@@ -80,6 +93,9 @@ object CatalogCodec {
       facilitate = strings(item.optJSONArray("facilitate")),
       reset = strings(item.optJSONArray("reset")),
       troubleshooting = troubles(item.optJSONArray("troubleshooting")),
+      video = item.optString("video"),
+      videoUri = videoUri,
+      videoMime = videoMime,
     )
   }
 

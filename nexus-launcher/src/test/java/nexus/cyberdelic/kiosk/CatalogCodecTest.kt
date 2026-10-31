@@ -1,4 +1,4 @@
-package nexus.cyberdelic.launcher
+package nexus.cyberdelic.kiosk
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows

@@ -34,8 +34,8 @@ experience guides and delivers it through `CatalogProvider`, which only the ADB 
 can call:
 
 ```sh
-adb shell "content write --user 0 --uri content://nexus.cyberdelic.launcher.catalog/catalog < /data/local/tmp/menu.json"
-adb shell content call --user 0 --uri content://nexus.cyberdelic.launcher.catalog --method status
+adb shell "content write --user 0 --uri content://nexus.cyberdelic.kiosk.catalog/catalog < /data/local/tmp/menu.json"
+adb shell content call --user 0 --uri content://nexus.cyberdelic.kiosk.catalog --method status
 ```
 
 A delivery that fails validation is rejected whole and the last good menu stays.

@@ -11,13 +11,13 @@ val releaseSigningReady =
   listOf(releaseKeystorePath, releaseKeystorePassword, releaseKeyAlias).all { !it.isNullOrBlank() }
 
 android {
-  namespace = "nexus.cyberdelic.launcher"
+  namespace = "nexus.cyberdelic.kiosk"
   compileSdk = 34
   // Unity's bundled SDK ships these; AGP's default would download 35.0.0.
   buildToolsVersion = "36.0.0"
 
   defaultConfig {
-    applicationId = "nexus.cyberdelic.launcher"
+    applicationId = "nexus.cyberdelic.kiosk"
     minSdk = 34
     targetSdk = 34
     versionCode = providers.gradleProperty("nexusVersionCode").orElse("1").get().toInt()

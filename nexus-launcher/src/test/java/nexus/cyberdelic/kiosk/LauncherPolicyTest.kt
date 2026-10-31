@@ -1,7 +1,7 @@
-package nexus.cyberdelic.launcher
+package nexus.cyberdelic.kiosk
 
 import android.view.KeyEvent
-import nexus.cyberdelic.launcher.ReturnPolicy.Decision
+import nexus.cyberdelic.kiosk.ReturnPolicy.Decision
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

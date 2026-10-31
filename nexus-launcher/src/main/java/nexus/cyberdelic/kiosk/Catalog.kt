@@ -1,4 +1,4 @@
-package nexus.cyberdelic.launcher
+package nexus.cyberdelic.kiosk
 
 import org.json.JSONArray
 import org.json.JSONObject

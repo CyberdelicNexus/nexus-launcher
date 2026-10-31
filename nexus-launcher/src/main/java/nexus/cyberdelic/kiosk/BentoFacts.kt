@@ -1,4 +1,4 @@
-package nexus.cyberdelic.launcher
+package nexus.cyberdelic.kiosk
 
 /** Turns a guide's free text into glanceable values. Mirrors quest_fleet/public/bento.js. */
 object BentoFacts {

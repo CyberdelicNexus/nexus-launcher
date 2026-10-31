@@ -1,4 +1,4 @@
-package nexus.cyberdelic.launcher
+package nexus.cyberdelic.kiosk
 
 import kotlin.math.PI
 import kotlin.math.abs

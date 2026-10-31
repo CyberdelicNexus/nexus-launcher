@@ -1,4 +1,4 @@
-package nexus.cyberdelic.launcher
+package nexus.cyberdelic.kiosk
 
 import android.content.ContentProvider
 import android.content.ContentValues

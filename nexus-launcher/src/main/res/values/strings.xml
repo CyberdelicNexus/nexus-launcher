@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources><string name="app_name">Cyberdelic Nexus</string>
-    <string name="back_to_launcher_label">Back to Cyberdelic Nexus</string>
-    <string name="back_to_launcher_description">Opens the Cyberdelic Nexus launcher when both volume buttons are held, or when an experience it started has ended. It sees which app is in front and the volume buttons, never what is on screen.</string></resources>
+<resources><string name="app_name">Cyberdelic Kiosk</string>
+    <string name="back_to_launcher_label">Back to Cyberdelic Kiosk</string>
+    <string name="back_to_launcher_description">Opens the Cyberdelic Kiosk launcher when both volume buttons are held, or when an experience it started has ended. It sees which app is in front and the volume buttons, never what is on screen.</string></resources>

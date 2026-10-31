@@ -1,4 +1,4 @@
-package nexus.cyberdelic.launcher
+package nexus.cyberdelic.kiosk
 
 import android.content.Context
 import android.content.res.ColorStateList
@@ -53,6 +53,7 @@ class NexusUi(
 
   private val page = vertical()
   private val grid = vertical()
+  private val gridScroll = ScrollView(context)
   private val viewButton = pillButton("")
   private val count = label("", 16f, MUTED)
   private val preferences = context.getSharedPreferences("nexus_view", Context.MODE_PRIVATE)
@@ -69,19 +70,21 @@ class NexusUi(
   private val launchButton = Button(context)
 
   init {
-    page.setPadding(dp(24), dp(14), dp(24), dp(12))
-    page.addView(header(), matchWrap())
-    val body = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
-    val scroll = ScrollView(context).apply {
-      addView(grid)
-      isVerticalFadingEdgeEnabled = true
-      setFadingEdgeLength(dp(36))
-      isVerticalScrollBarEnabled = false
+    page.setPadding(dp(24), dp(10), dp(24), dp(12))
+    page.addView(logo(), matchWrap())
+    val body = LinearLayout(context).apply {
+      orientation = LinearLayout.HORIZONTAL
+      gravity = Gravity.CENTER_HORIZONTAL
     }
-    body.addView(scroll, LinearLayout.LayoutParams(0, -1, 1f))
+    gridScroll.addView(grid)
+    gridScroll.isVerticalFadingEdgeEnabled = true
+    gridScroll.setFadingEdgeLength(dp(30))
+    gridScroll.isVerticalScrollBarEnabled = false
+    body.addView(rail(), LinearLayout.LayoutParams(dp(RAIL_WIDTH), -1).apply { marginEnd = dp(PANEL_GAP) })
+    body.addView(gridScroll, LinearLayout.LayoutParams(dp(BODY_WIDTH), -1))
     buildGuide()
-    body.addView(guide, LinearLayout.LayoutParams(dp(GUIDE_WIDTH), -1).apply { marginStart = dp(20) })
-    page.addView(body, LinearLayout.LayoutParams(-1, 0, 1f).apply { topMargin = dp(14) })
+    body.addView(guide, LinearLayout.LayoutParams(dp(GUIDE_WIDTH), -1).apply { marginStart = dp(PANEL_GAP) })
+    page.addView(body, LinearLayout.LayoutParams(-1, 0, 1f).apply { topMargin = dp(8) })
     guide.visibility = View.GONE
   }
 
@@ -90,34 +93,41 @@ class NexusUi(
     (root as ViewGroup).addView(page, FrameLayout.LayoutParams(-1, -1))
   }
 
-  private fun header(): View =
+  private fun logo(): View =
     LinearLayout(context).apply {
-      orientation = LinearLayout.HORIZONTAL
-      gravity = Gravity.CENTER_VERTICAL
-      background = rounded(GLASS, dp(30).toFloat())
-      setPadding(dp(18), dp(10), dp(12), dp(10))
+      gravity = Gravity.CENTER
       addView(
         ImageView(context).apply {
           setImageResource(R.drawable.nexus_logo)
           adjustViewBounds = true
         },
-        LinearLayout.LayoutParams(-2, dp(44)),
+        LinearLayout.LayoutParams(-2, dp(64)),
       )
-      val titles = vertical().apply {
-        addView(label("Cyberdelic Nexus", 22f, TEXT, bold = true))
-        addView(count)
-      }
-      addView(titles, LinearLayout.LayoutParams(0, -2, 1f).apply { marginStart = dp(12) })
-      addView(searchField(), LinearLayout.LayoutParams(dp(220), dp(52)))
-      addView(label("Size", 17f, MUTED_LIGHT), LinearLayout.LayoutParams(-2, -2).apply { marginStart = dp(14) })
-      addView(sizeSlider(), LinearLayout.LayoutParams(dp(170), dp(52)))
+    }
+
+  /** Every control in one column beside the grid, within easy reach of a ray or a hand. */
+  private fun rail(): View =
+    vertical().apply {
+      background = rounded(GLASS, dp(28).toFloat())
+      setPadding(dp(14), dp(16), dp(14), dp(16))
+      addView(label("Cyberdelic Kiosk", 19f, TEXT, bold = true))
+      addView(count, matchWrap().apply { bottomMargin = dp(14) })
+      addView(searchField(), LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(16) })
+      addView(label("Thumbnail size", 16f, MUTED_LIGHT))
+      addView(sizeSlider(), LinearLayout.LayoutParams(-1, dp(46)).apply { bottomMargin = dp(12) })
+      addView(
+        LinearLayout(context).apply {
+          addView(label("Distance", 16f, MUTED_LIGHT), LinearLayout.LayoutParams(0, -2, 1f))
+          addView(distance, LinearLayout.LayoutParams(-2, -2))
+        },
+        matchWrap().apply { bottomMargin = dp(6) },
+      )
       val closer = pillButton("Closer").apply { setOnClickListener { onDistanceChange(-1) } }
-      addView(closer, LinearLayout.LayoutParams(dp(96), dp(52)).apply { marginStart = dp(10) })
-      addView(distance, LinearLayout.LayoutParams(dp(44), dp(52)).apply { topMargin = dp(14) })
+      addView(closer, LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(8) })
       val farther = pillButton("Farther").apply { setOnClickListener { onDistanceChange(1) } }
-      addView(farther, LinearLayout.LayoutParams(dp(96), dp(52)))
+      addView(farther, LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(16) })
       viewButton.setOnClickListener { onToggleView() }
-      addView(viewButton, LinearLayout.LayoutParams(dp(180), dp(52)).apply { marginStart = dp(10) })
+      addView(viewButton, LinearLayout.LayoutParams(-1, dp(54)))
     }
 
   private fun searchField(): EditText =
@@ -230,14 +240,17 @@ class NexusUi(
       )
       return
     }
-    // Bigger thumbnails mean fewer on a row; the guide takes its own width first.
-    val room = if (selectedId == null) GRID_WIDTH else GRID_WIDTH - GUIDE_WIDTH - 20
-    val columns = (room / (iconSize * 7 / 4)).coerceAtLeast(2)
-    val tileHeight = iconSize + TILE_TEXT_HEIGHT
+    // Fixed cells keep the logos together; the block is sized to them and centred on the panel.
+    val room = if (selectedId == null) BODY_WIDTH else BODY_WIDTH - GUIDE_WIDTH - PANEL_GAP
+    val cell = iconSize + TILE_GAP
+    val columns = (room / cell).coerceAtLeast(2)
+    (gridScroll.layoutParams as? LinearLayout.LayoutParams)?.let {
+      it.width = dp(minOf(room, columns * cell))
+      gridScroll.layoutParams = it
+    }
     shown.chunked(columns).forEach { row ->
       val line = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
-      row.forEach { line.addView(tile(it), LinearLayout.LayoutParams(0, dp(tileHeight), 1f)) }
-      repeat(columns - row.size) { line.addView(View(context), LinearLayout.LayoutParams(0, dp(tileHeight), 1f)) }
+      row.forEach { line.addView(tile(it), LinearLayout.LayoutParams(dp(cell), dp(iconSize + TILE_TEXT_HEIGHT))) }
       grid.addView(line, matchWrap())
     }
   }
@@ -624,13 +637,16 @@ class NexusUi(
 
   private companion object {
     const val KEY_ICON_SIZE = "icon_size"
-    const val GRID_WIDTH = 1700
-    const val TILE_TEXT_HEIGHT = 96
+    const val RAIL_WIDTH = 220
+    const val PANEL_GAP = 20
+    const val BODY_WIDTH = 1462
+    const val TILE_GAP = 44
+    const val TILE_TEXT_HEIGHT = 88
     const val ICON_MIN = 100
     const val ICON_DEFAULT = 148
     const val ICON_MAX = 256
     const val ICON_STEP = 12
-    const val GUIDE_WIDTH = 860
+    const val GUIDE_WIDTH = 800
     val TEXT = Color.parseColor("#F7F5FF")
     val MUTED = Color.parseColor("#B3ADCC")
     val MUTED_LIGHT = Color.parseColor("#D5D0E8")
